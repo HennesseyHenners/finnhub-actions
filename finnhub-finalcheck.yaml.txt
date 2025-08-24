@@ -1,0 +1,142 @@
+openapi: 3.1.0
+info:
+  title: Finnhub Snapshot Action - finalCheck
+  description: >
+    Lightweight real-time snapshot for trade readiness. Checks quotes, volume, news, and earnings proximity for a final go/no-go decision.
+  version: 1.0.0
+servers:
+  - url: https://finnhub.io/api/v1
+    description: Finnhub main API
+paths:
+  /quote:
+    get:
+      operationId: getQuote
+      summary: Get real-time quote and volume data
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Real-time quote info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  c:
+                    type: number
+                    description: Current price
+                  pc:
+                    type: number
+                    description: Previous close price
+                  h:
+                    type: number
+                    description: Daily high
+                  l:
+                    type: number
+                    description: Daily low
+                  t:
+                    type: integer
+                    description: Unix timestamp
+                  v:
+                    type: number
+                    description: Volume
+  /company-news:
+    get:
+      operationId: getRecentNews
+      summary: Get company news (last 24–48 hours)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Recent news headlines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    datetime:
+                      type: integer
+                    headline:
+                      type: string
+                    summary:
+                      type: string
+                    source:
+                      type: string
+                    url:
+                      type: string
+  /calendar/earnings:
+    get:
+      operationId: getTodayEarnings
+      summary: Check if a company has earnings today
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Earnings calendar for today
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  earningsCalendar:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        symbol:
+                          type: string
+                        date:
+                          type: string
+                          format: date
+                        hour:
+                          type: string
+                        epsEstimate:
+                          type: number
+                        revenueEstimate:
+                          type: number
+security:
+  - finnhubApiKey: []
+components:
+  securitySchemes:
+    finnhubApiKey:
+      type: apiKey
+      in: query
+      name: token
