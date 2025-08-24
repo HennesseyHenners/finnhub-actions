@@ -1,0 +1,184 @@
+openapi: 3.1.0
+info:
+  title: Finnhub Market Data API
+  description: >
+    Free-tier endpoints used by the confirmCandidates action for market enrichment. This specification fetches candles, earnings dates, sentiment data, and light fundamentals for a given list of stock symbols. All calculations are performed inside the GPT.
+  version: 1.0.0
+servers:
+  - url: https://finnhub.io/api/v1
+    description: Finnhub production server
+paths:
+  /stock/candle:
+    get:
+      operationId: getCandles
+      summary: Get historical daily OHLCV data
+      description: Returns daily candlestick data for a given symbol, required for moving averages, ATR, and volume analysis.
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: resolution
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [D]
+            default: D
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: integer
+            description: Unix timestamp (UTC) for start date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: integer
+            description: Unix timestamp (UTC) for end date
+      responses:
+        '200':
+          description: Daily candle data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  c:
+                    type: array
+                    items: { type: number }
+                    description: Close prices
+                  h:
+                    type: array
+                    items: { type: number }
+                    description: High prices
+                  l:
+                    type: array
+                    items: { type: number }
+                    description: Low prices
+                  o:
+                    type: array
+                    items: { type: number }
+                    description: Open prices
+                  v:
+                    type: array
+                    items: { type: number }
+                    description: Volume data
+                  t:
+                    type: array
+                    items: { type: integer }
+                    description: Timestamps (Unix UTC)
+                  s:
+                    type: string
+                    description: Status ("ok" or "no_data")
+  /calendar/earnings:
+    get:
+      operationId: getEarningsCalendar
+      summary: Get upcoming earnings calendar
+      description: Returns earnings date info within a 2-week window.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Earnings calendar data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  earningsCalendar:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        symbol:
+                          type: string
+                        date:
+                          type: string
+                          format: date
+  /news-sentiment:
+    get:
+      operationId: getSentiment
+      summary: Get 7-day news sentiment for a stock
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: News sentiment data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sentiment:
+                    type: string
+                  companyNewsScore:
+                    type: number
+                  buzz:
+                    type: object
+                    properties:
+                      articlesInLastWeek:
+                        type: integer
+                      buzz:
+                        type: number
+  /stock/metric:
+    get:
+      operationId: getStockMetrics
+      summary: Get basic fundamental metrics
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: metric
+          in: query
+          required: false
+          schema:
+            type: string
+            example: all
+      responses:
+        '200':
+          description: Stock metric data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metric:
+                    type: object
+                    properties:
+                      peNormalizedAnnual:
+                        type: number
+                      epsGrowth:
+                        type: number
+security:
+  - finnhubApiKey: []
+components:
+  securitySchemes:
+    finnhubApiKey:
+      type: apiKey
+      in: query
+      name: token
