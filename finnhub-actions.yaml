@@ -1,18 +1,17 @@
 openapi: 3.1.0
 info:
-  title: Finnhub Market Data API
+  title: Finnhub GPT Actions
   description: >
-    Free-tier endpoints used by the confirmCandidates action for market enrichment. This specification fetches candles, earnings dates, sentiment data, and light fundamentals for a given list of stock symbols. All calculations are performed inside the GPT.
-  version: 1.0.0
+    Combined endpoints for confirmCandidates and finalCheck actions. Uses only free-tier Finnhub endpoints.
+  version: 2.0.0
 servers:
   - url: https://finnhub.io/api/v1
-    description: Finnhub production server
+    description: Finnhub main API
 paths:
   /stock/candle:
     get:
       operationId: getCandles
       summary: Get historical daily OHLCV data
-      description: Returns daily candlestick data for a given symbol, required for moving averages, ATR, and volume analysis.
       parameters:
         - name: symbol
           in: query
@@ -31,13 +30,13 @@ paths:
           required: true
           schema:
             type: integer
-            description: Unix timestamp (UTC) for start date
+            description: Unix timestamp (UTC)
         - name: to
           in: query
           required: true
           schema:
             type: integer
-            description: Unix timestamp (UTC) for end date
+            description: Unix timestamp (UTC)
       responses:
         '200':
           description: Daily candle data
@@ -49,35 +48,27 @@ paths:
                   c:
                     type: array
                     items: { type: number }
-                    description: Close prices
                   h:
                     type: array
                     items: { type: number }
-                    description: High prices
                   l:
                     type: array
                     items: { type: number }
-                    description: Low prices
                   o:
                     type: array
                     items: { type: number }
-                    description: Open prices
                   v:
                     type: array
                     items: { type: number }
-                    description: Volume data
                   t:
                     type: array
                     items: { type: integer }
-                    description: Timestamps (Unix UTC)
                   s:
                     type: string
-                    description: Status ("ok" or "no_data")
   /calendar/earnings:
     get:
       operationId: getEarningsCalendar
-      summary: Get upcoming earnings calendar
-      description: Returns earnings date info within a 2-week window.
+      summary: Get earnings calendar data
       parameters:
         - name: from
           in: query
@@ -98,7 +89,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Earnings calendar data
+          description: Earnings calendar
           content:
             application/json:
               schema:
@@ -114,6 +105,12 @@ paths:
                         date:
                           type: string
                           format: date
+                        hour:
+                          type: string
+                        epsEstimate:
+                          type: number
+                        revenueEstimate:
+                          type: number
   /news-sentiment:
     get:
       operationId: getSentiment
@@ -174,6 +171,78 @@ paths:
                         type: number
                       epsGrowth:
                         type: number
+  /quote:
+    get:
+      operationId: getQuote
+      summary: Get real-time quote and volume data
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Real-time quote
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  c:
+                    type: number
+                  pc:
+                    type: number
+                  h:
+                    type: number
+                  l:
+                    type: number
+                  t:
+                    type: integer
+                  v:
+                    type: number
+  /company-news:
+    get:
+      operationId: getRecentNews
+      summary: Get company news headlines from last 24–48 hours
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Recent company news
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    datetime:
+                      type: integer
+                    headline:
+                      type: string
+                    summary:
+                      type: string
+                    source:
+                      type: string
+                    url:
+                      type: string
 security:
   - finnhubApiKey: []
 components:
