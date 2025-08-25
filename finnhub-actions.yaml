@@ -1,12 +1,11 @@
 openapi: 3.1.0
 info:
   title: Finnhub GPT Actions
-  description: >
-    Combined endpoints for confirmCandidates and finalCheck actions. Uses only free-tier Finnhub endpoints.
-  version: 2.0.0
+  description: Combined endpoints for confirmCandidates and finalCheck. Uses only free-tier endpoints.
+  version: 2.1.0
 servers:
   - url: https://finnhub.io/api/v1
-    description: Finnhub main API
+    description: Finnhub Main API
 paths:
   /stock/candle:
     get:
@@ -24,22 +23,19 @@ paths:
           schema:
             type: string
             enum: [D]
-            default: D
         - name: from
           in: query
           required: true
           schema:
             type: integer
-            description: Unix timestamp (UTC)
         - name: to
           in: query
           required: true
           schema:
             type: integer
-            description: Unix timestamp (UTC)
       responses:
         '200':
-          description: Daily candle data
+          description: Daily OHLCV data
           content:
             application/json:
               schema:
@@ -68,7 +64,7 @@ paths:
   /calendar/earnings:
     get:
       operationId: getEarningsCalendar
-      summary: Get earnings calendar data
+      summary: Get earnings calendar
       parameters:
         - name: from
           in: query
@@ -89,7 +85,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Earnings calendar
+          description: Earnings data
           content:
             application/json:
               schema:
@@ -114,7 +110,7 @@ paths:
   /news-sentiment:
     get:
       operationId: getSentiment
-      summary: Get 7-day news sentiment for a stock
+      summary: Get 7-day sentiment score
       parameters:
         - name: symbol
           in: query
@@ -123,7 +119,7 @@ paths:
             type: string
       responses:
         '200':
-          description: News sentiment data
+          description: Sentiment score
           content:
             application/json:
               schema:
@@ -158,7 +154,7 @@ paths:
             example: all
       responses:
         '200':
-          description: Stock metric data
+          description: Metric data
           content:
             application/json:
               schema:
@@ -174,7 +170,7 @@ paths:
   /quote:
     get:
       operationId: getQuote
-      summary: Get real-time quote and volume data
+      summary: Get real-time quote
       parameters:
         - name: symbol
           in: query
@@ -183,7 +179,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Real-time quote
+          description: Quote data
           content:
             application/json:
               schema:
@@ -204,7 +200,7 @@ paths:
   /company-news:
     get:
       operationId: getRecentNews
-      summary: Get company news headlines from last 24–48 hours
+      summary: Get recent company news
       parameters:
         - name: symbol
           in: query
@@ -225,7 +221,7 @@ paths:
             format: date
       responses:
         '200':
-          description: Recent company news
+          description: News data
           content:
             application/json:
               schema:
