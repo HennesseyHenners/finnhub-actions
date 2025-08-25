@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Weekly Rotator Finnhub Proxy
-  version: 1.3.0
+  version: 1.3.1
   description: Proxy that injects the Finnhub and TAAPI secrets server-side; provides ATR via TAAPI with resilient Yahoo fallback.
 servers:
   - url: https://weekly-rotator-proxy.henryrajones.workers.dev
@@ -185,16 +185,16 @@ paths:
 
 components:
   schemas:
-    AtrResponse:
+    Quote:
       type: object
       properties:
-        value: { type: number }
-        source: { type: string }
-        period: { type: integer }
-        lastClose: { type: number }
-        atrPct: { type: number }
-        symbol: { type: string, description: Present when using multi-symbol calls }
-
+        c: { type: number, description: Current price }
+        pc: { type: number, description: Previous close }
+        h: { type: number, description: High }
+        l: { type: number, description: Low }
+        o: { type: number, description: Open }
+        v: { type: number, description: Volume }
+        t: { type: integer, description: Timestamp (seconds) }
 
     Candles:
       type: object
@@ -248,4 +248,4 @@ components:
         period: { type: integer }
         lastClose: { type: number }
         atrPct: { type: number }
-        symbol: { type: string, description: Optional. Present when using multi-symbol TAAPI route. }
+        symbol: { type: string, description: Present when using multi-symbol calls }
