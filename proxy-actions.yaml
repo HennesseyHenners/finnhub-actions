@@ -5,6 +5,7 @@ info:
   description: Proxy that injects the Finnhub token server-side and provides ATR via TAAPI with Yahoo fallback.
 servers:
   - url: https://weekly-rotator-proxy.henryrajones.workers.dev
+components: {}
 paths:
   /quote:
     get:
@@ -49,11 +50,15 @@ paths:
         - name: from
           in: query
           required: true
-          schema: { type: integer, description: Unix timestamp (UTC seconds) }
+          schema:
+            type: integer
+            description: Unix timestamp (UTC seconds)
         - name: to
           in: query
           required: true
-          schema: { type: integer, description: Unix timestamp (UTC seconds) }
+          schema:
+            type: integer
+            description: Unix timestamp (UTC seconds)
       responses:
         '200':
           description: Candles
