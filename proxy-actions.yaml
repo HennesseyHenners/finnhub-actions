@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Weekly Rotator Finnhub Proxy
-  version: 1.3.1
-  description: Proxy that injects the Finnhub and TAAPI secrets server-side; provides ATR via TAAPI with resilient Yahoo fallback.
+  version: 1.4.0
+  description: Proxy that injects the Finnhub and TAAPI secrets server-side; provides ATR via TAAPI with resilient Yahoo fallbacks.
 servers:
   - url: https://weekly-rotator-proxy.henryrajones.workers.dev
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
@@ -183,6 +183,44 @@ paths:
                     items:
                       $ref: '#/components/schemas/AtrResponse'
 
+  /atr:
+    get:
+      operationId: getAtrFromYahoo
+      summary: ATR computed from Yahoo Finance candles (direct fallback)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: period
+          in: query
+          required: false
+          schema: { type: integer, default: 14 }
+      responses:
+        '200':
+          description: ATR response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AtrResponse'
+
+  /yahoo/volume:
+    get:
+      operationId: getYahooVolume
+      summary: Latest daily volume from Yahoo Finance (fallback when quote.v is missing)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Latest volume snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeResponse'
+
 components:
   schemas:
     Quote:
@@ -193,7 +231,7 @@ components:
         h: { type: number, description: High }
         l: { type: number, description: Low }
         o: { type: number, description: Open }
-        v: { type: number, description: Volume }
+        v: { type: number, description: Volume (may be omitted on free plans) }
         t: { type: integer, description: Timestamp (seconds) }
 
     Candles:
@@ -249,3 +287,10 @@ components:
         lastClose: { type: number }
         atrPct: { type: number }
         symbol: { type: string, description: Present when using multi-symbol calls }
+
+    VolumeResponse:
+      type: object
+      properties:
+        volume: { type: number }
+        lastClose: { type: number }
+        source: { type: string }
