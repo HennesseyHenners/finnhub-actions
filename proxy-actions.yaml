@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Weekly Rotator Finnhub Proxy
-  version: 1.2.2
-  description: Proxy that injects the Finnhub token server-side and provides ATR via TAAPI with Yahoo fallback.
+  version: 1.3.0
+  description: Proxy that injects the Finnhub and TAAPI secrets server-side; provides ATR via TAAPI with resilient Yahoo fallback.
 servers:
   - url: https://weekly-rotator-proxy.henryrajones.workers.dev
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
@@ -16,8 +16,7 @@ paths:
         - name: symbol
           in: query
           required: true
-          schema:
-            type: string
+          schema: { type: string }
       responses:
         '200':
           description: Quote data
@@ -34,8 +33,7 @@ paths:
         - name: symbol
           in: query
           required: true
-          schema:
-            type: string
+          schema: { type: string }
         - name: resolution
           in: query
           required: true
@@ -70,20 +68,15 @@ paths:
         - name: symbol
           in: query
           required: true
-          schema:
-            type: string
+          schema: { type: string }
         - name: from
           in: query
           required: true
-          schema:
-            type: string
-            format: date
+          schema: { type: string, format: date }
         - name: to
           in: query
           required: true
-          schema:
-            type: string
-            format: date
+          schema: { type: string, format: date }
       responses:
         '200':
           description: News list
@@ -102,20 +95,15 @@ paths:
         - name: from
           in: query
           required: true
-          schema:
-            type: string
-            format: date
+          schema: { type: string, format: date }
         - name: to
           in: query
           required: true
-          schema:
-            type: string
-            format: date
+          schema: { type: string, format: date }
         - name: symbol
           in: query
           required: false
-          schema:
-            type: string
+          schema: { type: string }
       responses:
         '200':
           description: Earnings list
@@ -132,14 +120,11 @@ paths:
         - name: symbol
           in: query
           required: true
-          schema:
-            type: string
+          schema: { type: string }
         - name: metric
           in: query
           required: false
-          schema:
-            type: string
-            default: all
+          schema: { type: string, default: all }
       responses:
         '200':
           description: Metrics
@@ -151,38 +136,41 @@ paths:
   /taapi/atr:
     get:
       operationId: getAtrTaapi
-      summary: ATR via TAAPI (proxied; auto-fallback to Yahoo on 429)
+      summary: ATR via TAAPI (proxied; auto-fallback to Yahoo on error). Supports up to 3 symbols via `symbols`.
       parameters:
         - name: symbol
           in: query
-          required: true
-          schema:
-            type: string
+          required: false
+          schema: { type: string }
+          description: Single symbol (e.g., AAPL). Use this OR `symbols`.
+        - name: symbols
+          in: query
+          required: false
+          schema: { type: string }
+          description: Comma-separated symbols (max 3), e.g., "AAPL,MSFT,NVDA". Use this OR `symbol`.
         - name: interval
           in: query
           required: false
-          schema:
-            type: string
-            default: 1d
+          schema: { type: string, default: 1d }
         - name: exchange
           in: query
           required: false
-          schema:
-            type: string
-            default: yahoo
+          schema: { type: string, default: yahoo }
         - name: period
           in: query
           required: false
-          schema:
-            type: integer
-            default: 14
+          schema: { type: integer, default: 14 }
       responses:
         '200':
-          description: ATR response
+          description: ATR response for one symbol (object) or multiple (array of objects)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AtrResponse'
+                oneOf:
+                  - $ref: '#/components/schemas/AtrResponse'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/AtrResponse'
 
   /atr:
     get:
@@ -192,14 +180,11 @@ paths:
         - name: symbol
           in: query
           required: true
-          schema:
-            type: string
+          schema: { type: string }
         - name: period
           in: query
           required: false
-          schema:
-            type: integer
-            default: 14
+          schema: { type: integer, default: 14 }
       responses:
         '200':
           description: ATR response
@@ -273,3 +258,4 @@ components:
         period: { type: integer }
         lastClose: { type: number }
         atrPct: { type: number }
+        symbol: { type: string, description: Optional. Present when using multi-symbol TAAPI route. }
