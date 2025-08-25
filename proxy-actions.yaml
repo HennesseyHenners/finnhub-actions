@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Weekly Rotator Finnhub Proxy
-  version: 1.4.0
-  description: Proxy that injects the Finnhub and TAAPI secrets server-side; provides ATR via TAAPI with resilient Yahoo fallbacks.
+  version: 1.5.0
+  description: Proxy that injects the Finnhub and TAAPI secrets server-side; provides ATR via TAAPI with resilient Yahoo fallbacks and a live volume spike helper.
 servers:
   - url: https://weekly-rotator-proxy.henryrajones.workers.dev
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
@@ -221,6 +221,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/VolumeResponse'
 
+  /volume/spike:
+    get:
+      operationId: getVolumeSpike
+      summary: Compute live volume spike vs. AvgVol(3m), using Finnhub first and Yahoo as fallback
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: avgVol3m
+          in: query
+          required: true
+          schema: { type: number }
+          description: 3-month average volume from your Stage-1 screener
+        - name: prefer
+          in: query
+          required: false
+          schema: { type: string, enum: [auto, finnhub, yahoo], default: auto }
+          description: Source preference. auto = Finnhub then Yahoo (default).
+      responses:
+        '200':
+          description: Live volume spike calculation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeSpikeResponse'
+
 components:
   schemas:
     Quote:
@@ -294,3 +321,12 @@ components:
         volume: { type: number }
         lastClose: { type: number }
         source: { type: string }
+
+    VolumeSpikeResponse:
+      type: object
+      properties:
+        symbol: { type: string }
+        liveVolume: { type: number }
+        avgVol3m: { type: number }
+        spike: { type: number, description: liveVolume / avgVol3m }
+        source: { type: string, description: "finnhub or yahoo" }
