@@ -133,15 +133,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/MetricsResponse'
 
-  /taapi/atr:
+  /taapi/indicator:
     get:
-      operationId: getAtrTaapi
-      summary: ATR via TAAPI (proxied; auto-fallback to Yahoo on error).
+      operationId: getTaapiIndicator
+      summary: Generic TAAPI indicator proxy (multi-indicator, multi-symbol)
       description: >
-        Supports both stocks and crypto. Use `symbol` for a single instrument,
-        or `symbols` (comma-separated, max 3) for batch. For stocks, the proxy
-        sets `type=stocks` automatically. For crypto, specify `exchange`
-        (defaults to binance). Returns either a single object or an array.
+        Generic TAAPI indicator proxy for RSI, MACD, ADX, Supertrend, MFI,
+        BBANDS/BBW/Keltner. Auto-sets type=stocks; for crypto pass exchange
+        (default binance). Use symbol or symbols (max 3). Supports
+        period/results/backtrack/addResultTimestamp. Returns TAAPI JSON with
+        a top-level symbol.
       parameters:
         - name: symbol
           in: query
@@ -255,7 +256,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/IndicatorPassThrough'
 
-   /taapi/atr:
+ /taapi/atr:
     get:
       operationId: getAtrTaapi
       summary: ATR via TAAPI (proxied; auto-fallback to Yahoo on error).
