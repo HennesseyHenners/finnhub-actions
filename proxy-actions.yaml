@@ -1,13 +1,10 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: Weekly Rotator Finnhub Proxy
-  version: 1.2.0
+  version: 1.2.1
   description: Proxy that injects the Finnhub token server-side and provides ATR via TAAPI with Yahoo fallback.
 servers:
   - url: https://weekly-rotator-proxy.henryrajones.workers.dev
-
-components:
-  schemas: {}   # <- must be an object (even if empty)
 
 paths:
   /quote:
@@ -18,22 +15,15 @@ paths:
         - name: symbol
           in: query
           required: true
-          schema: { type: string }
+          schema:
+            type: string
       responses:
         '200':
           description: Quote data
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  c: { type: number }
-                  pc: { type: number }
-                  h: { type: number }
-                  l: { type: number }
-                  o: { type: number }
-                  v: { type: number }
-                  t: { type: integer }
+                $ref: '#/components/schemas/Quote'
 
   /stock/candle:
     get:
@@ -43,7 +33,8 @@ paths:
         - name: symbol
           in: query
           required: true
-          schema: { type: string }
+          schema:
+            type: string
         - name: resolution
           in: query
           required: true
@@ -55,12 +46,14 @@ paths:
           required: true
           schema:
             type: integer
+            format: int64
             description: Unix timestamp (UTC seconds)
         - name: to
           in: query
           required: true
           schema:
             type: integer
+            format: int64
             description: Unix timestamp (UTC seconds)
       responses:
         '200':
@@ -68,33 +61,30 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  c: { type: array, items: { type: number } }
-                  h: { type: array, items: { type: number } }
-                  l: { type: array, items: { type: number } }
-                  o: { type: array, items: { type: number } }
-                  v: { type: array, items: { type: number } }
-                  t: { type: array, items: { type: integer } }
-                  s: { type: string }
+                $ref: '#/components/schemas/Candles'
 
   /company-news:
     get:
       operationId: getRecentNews
-      summary: Company news last 24–48h (proxied)
+      summary: Company news last 24-48h (proxied)
       parameters:
         - name: symbol
           in: query
           required: true
-          schema: { type: string }
+          schema:
+            type: string
         - name: from
           in: query
           required: true
-          schema: { type: string, format: date }
+          schema:
+            type: string
+            format: date
         - name: to
           in: query
           required: true
-          schema: { type: string, format: date }
+          schema:
+            type: string
+            format: date
       responses:
         '200':
           description: News list
@@ -103,13 +93,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    datetime: { type: integer }
-                    headline: { type: string }
-                    summary: { type: string }
-                    source: { type: string }
-                    url: { type: string }
+                  $ref: '#/components/schemas/NewsItem'
 
   /calendar/earnings:
     get:
@@ -119,33 +103,27 @@ paths:
         - name: from
           in: query
           required: true
-          schema: { type: string, format: date }
+          schema:
+            type: string
+            format: date
         - name: to
           in: query
           required: true
-          schema: { type: string, format: date }
+          schema:
+            type: string
+            format: date
         - name: symbol
           in: query
           required: false
-          schema: { type: string }
+          schema:
+            type: string
       responses:
         '200':
           description: Earnings list
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  earningsCalendar:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        symbol: { type: string }
-                        date: { type: string, format: date }
-                        hour: { type: string }
-                        epsEstimate: { type: number }
-                        revenueEstimate: { type: number }
+                $ref: '#/components/schemas/EarningsResponse'
 
   /stock/metric:
     get:
@@ -155,56 +133,58 @@ paths:
         - name: symbol
           in: query
           required: true
-          schema: { type: string }
+          schema:
+            type: string
         - name: metric
           in: query
           required: false
-          schema: { type: string, default: all }
+          schema:
+            type: string
+            default: all
       responses:
         '200':
           description: Metrics
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  metric:
-                    type: object
+                $ref: '#/components/schemas/MetricsResponse'
 
   /taapi/atr:
     get:
       operationId: getAtrTaapi
-      summary: ATR via TAAPI (proxied; will auto-fallback to Yahoo on 429)
+      summary: ATR via TAAPI (proxied; auto-fallback to Yahoo on 429)
       parameters:
         - name: symbol
           in: query
           required: true
-          schema: { type: string }
+          schema:
+            type: string
         - name: interval
           in: query
           required: false
-          schema: { type: string, default: 1d }
+          schema:
+            type: string
+            default: 1d
         - name: exchange
           in: query
           required: false
-          schema: { type: string, default: yahoo }
+          schema:
+            type: string
+            default: yahoo
         - name: period
           in: query
           required: false
-          schema: { type: integer, default: 14 }
+          schema:
+            type: integer
+            format: int32
+            default: 14
       responses:
         '200':
           description: ATR response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  value: { type: number }
-                  source: { type: string }
-                  period: { type: integer }
-                  lastClose: { type: number }
-                  atrPct: { type: number }
+                $ref: '#/components/schemas/AtrResponse'
 
   /atr:
     get:
@@ -214,21 +194,99 @@ paths:
         - name: symbol
           in: query
           required: true
-          schema: { type: string }
+          schema:
+            type: string
         - name: period
           in: query
           required: false
-          schema: { type: integer, default: 14 }
+          schema:
+            type: integer
+            format: int32
+            default: 14
       responses:
         '200':
           description: ATR response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  value: { type: number }
-                  source: { type: string }
-                  period: { type: integer }
-                  lastClose: { type: number }
-                  atrPct: { type: number }
+                $ref: '#/components/schemas/AtrResponse'
+
+components:
+  schemas:
+    Quote:
+      type: object
+      properties:
+        c: { type: number, description: Current price }
+        pc: { type: number, description: Previous close }
+        h: { type: number, description: High }
+        l: { type: number, description: Low }
+        o: { type: number, description: Open }
+        v: { type: number, description: Volume }
+        t: { type: integer, format: int64, description: Timestamp (seconds) }
+
+    Candles:
+      type: object
+      properties:
+        c:
+          type: array
+          items: { type: number }
+        h:
+          type: array
+          items: { type: number }
+        l:
+          type: array
+          items: { type: number }
+        o:
+          type: array
+          items: { type: number }
+        v:
+          type: array
+          items: { type: number }
+        t:
+          type: array
+          items: { type: integer, format: int64 }
+        s:
+          type: string
+          description: Status
+
+    NewsItem:
+      type: object
+      properties:
+        datetime: { type: integer, format: int64 }
+        headline: { type: string }
+        summary: { type: string }
+        source: { type: string }
+        url: { type: string }
+
+    EarningsResponse:
+      type: object
+      properties:
+        earningsCalendar:
+          type: array
+          items:
+            $ref: '#/components/schemas/EarningsItem'
+
+    EarningsItem:
+      type: object
+      properties:
+        symbol: { type: string }
+        date: { type: string, format: date }
+        hour: { type: string }
+        epsEstimate: { type: number }
+        revenueEstimate: { type: number }
+
+    MetricsResponse:
+      type: object
+      properties:
+        metric:
+          type: object
+          additionalProperties: true
+
+    AtrResponse:
+      type: object
+      properties:
+        value: { type: number }
+        source: { type: string }
+        period: { type: integer, format: int32 }
+        lastClose: { type: number }
+        atrPct: { type: number }
