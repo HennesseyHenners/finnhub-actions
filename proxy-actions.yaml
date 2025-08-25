@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Weekly Rotator Finnhub Proxy
-  version: 1.7.0
+  version: 1.7.1
   description: Proxy that injects the Finnhub and TAAPI secrets server-side; provides ATR via TAAPI with resilient Yahoo fallbacks, generic TAAPI indicator proxy, and volume spike helpers.
 servers:
   - url: https://weekly-rotator-proxy.henryrajones.workers.dev
@@ -133,16 +133,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/MetricsResponse'
 
-  /taapi/indicator:
+  /taapi/atr:
     get:
-      operationId: getTaapiIndicator
-      summary: Generic TAAPI indicator proxy (multi-indicator, multi-symbol)
+      operationId: getAtrTaapi
+      summary: ATR via TAAPI (proxied; Yahoo fallback)
       description: >
-        Generic TAAPI indicator proxy for RSI, MACD, ADX, Supertrend, MFI,
-        BBANDS/BBW/Keltner. Auto-sets type=stocks; for crypto pass exchange
-        (default binance). Use symbol or symbols (max 3). Supports
-        period/results/backtrack/addResultTimestamp. Returns TAAPI JSON with
-        a top-level symbol.
+        ATR via TAAPI with Yahoo fallback. Supports stocks (auto type=stocks)
+        and crypto (exchange default binance). Use symbol or symbols (CSV, max 3).
+        Returns an object for one symbol or an array for many.
       parameters:
         - name: symbol
           in: query
@@ -166,7 +164,7 @@ paths:
           in: query
           required: false
           schema: { type: string, enum: [stocks, crypto] }
-          description: Force asset type. Usually not required—stocks are auto-detected, crypto uses `/` in symbol.
+          description: Force asset type. Usually not required—stocks auto-detected; crypto uses `/` in symbol.
         - name: exchange
           in: query
           required: false
@@ -184,16 +182,14 @@ paths:
                     items:
                       $ref: '#/components/schemas/AtrResponse'
 
-/taapi/indicator:
+  /taapi/indicator:
     get:
       operationId: getTaapiIndicator
       summary: Generic TAAPI indicator proxy (multi-indicator, multi-symbol)
       description: >
-        Fetch RSI, MACD, ADX, Supertrend, MFI, BBANDS/BBW/Keltner and more via a single route.
-        - Auto-sets `type=stocks` for equities; for crypto, pass an `exchange` (defaults to binance).
-        - Use `symbol` or `symbols` (comma-separated, max 3).
-        - Pass TAAPI params like `period`, `results`, `backtrack`, `addResultTimestamp` as needed.
-        - Returns TAAPI's raw structure with an added top-level `symbol` per item.
+        Proxy for RSI, MACD, ADX, Supertrend, MFI, BBANDS/BBW/Keltner. Auto type=stocks;
+        for crypto pass exchange (default binance). Use symbol or symbols (max 3).
+        Supports period/results/backtrack/addResultTimestamp. Returns TAAPI JSON with a top-level symbol.
       parameters:
         - name: name
           in: query
@@ -223,7 +219,7 @@ paths:
           in: query
           required: false
           schema: { type: string, enum: [stocks, crypto] }
-          description: Force asset type. Usually not required—stocks are auto-detected, crypto uses `/` in symbol.
+          description: Force asset type. Usually not required—stocks auto-detected; crypto uses `/` in symbol.
         - name: exchange
           in: query
           required: false
@@ -243,7 +239,7 @@ paths:
           in: query
           required: false
           schema: { type: string, enum: ['true','false'] }
-          description: Return timestamps for each result (TAAPI feature).
+          description: Include timestamps for each result.
       responses:
         '200':
           description: Indicator response for one symbol (object/array) or multiple (array of mixed objects/arrays)
@@ -256,14 +252,10 @@ paths:
                     items:
                       $ref: '#/components/schemas/IndicatorPassThrough'
 
- /taapi/atr:
+  /atr:
     get:
-      operationId: getAtrTaapi
-      summary: ATR via TAAPI (proxied; auto-fallback to Yahoo on error).
-      description: >
-        ATR via TAAPI with Yahoo fallback. Supports stocks (auto type=stocks)
-        and crypto (exchange, default binance). Use symbol or symbols (CSV,
-        max 3). Returns an object for one symbol or an array for many.
+      operationId: getAtrFromYahoo
+      summary: ATR computed from Yahoo Finance candles (direct fallback)
       parameters:
         - name: symbol
           in: query
