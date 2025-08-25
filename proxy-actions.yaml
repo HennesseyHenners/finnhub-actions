@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Weekly Rotator Finnhub Proxy
-  version: 1.5.0
-  description: Proxy that injects the Finnhub and TAAPI secrets server-side; provides ATR via TAAPI with resilient Yahoo fallbacks and a live volume spike helper.
+  version: 1.6.0
+  description: Proxy that injects the Finnhub and TAAPI secrets server-side; provides ATR via TAAPI with resilient Yahoo fallbacks and volume spike helpers.
 servers:
   - url: https://weekly-rotator-proxy.henryrajones.workers.dev
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
@@ -248,6 +248,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/VolumeSpikeResponse'
 
+  /volume/spike/normalized:
+    get:
+      operationId: getVolumeSpikeNormalized
+      summary: Time-normalized live volume spike vs. AvgVol(3m) using US market session (09:30–16:00 America/New_York)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: avgVol3m
+          in: query
+          required: true
+          schema: { type: number }
+          description: 3-month average volume from your Stage-1 screener
+        - name: prefer
+          in: query
+          required: false
+          schema: { type: string, enum: [auto, finnhub, yahoo], default: auto }
+          description: Source preference. auto = Finnhub then Yahoo (default).
+      responses:
+        '200':
+          description: Time-normalized volume spike calculation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NormalizedVolumeSpikeResponse'
+
 components:
   schemas:
     Quote:
@@ -329,4 +356,18 @@ components:
         liveVolume: { type: number }
         avgVol3m: { type: number }
         spike: { type: number, description: liveVolume / avgVol3m }
+        source: { type: string, description: "finnhub or yahoo" }
+
+    NormalizedVolumeSpikeResponse:
+      type: object
+      properties:
+        symbol: { type: string }
+        liveVolume: { type: number }
+        avgVol3m: { type: number }
+        rawSpike: { type: number, description: liveVolume / avgVol3m }
+        adjustedSpike: { type: number, nullable: true, description: "Time-normalized; null in pre-market" }
+        expectedSoFar: { type: number, description: "AvgVol3m * fractionElapsed (when market open), else 0 or AvgVol3m" }
+        minutesSinceOpen: { type: integer }
+        fractionElapsed: { type: number }
+        marketState: { type: string, enum: [pre, open, post, closed] }
         source: { type: string, description: "finnhub or yahoo" }
