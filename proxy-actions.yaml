@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Weekly Rotator Finnhub Proxy
-  version: 1.6.0
-  description: Proxy that injects the Finnhub and TAAPI secrets server-side; provides ATR via TAAPI with resilient Yahoo fallbacks and volume spike helpers.
+  version: 1.7.0
+  description: Proxy that injects the Finnhub and TAAPI secrets server-side; provides ATR via TAAPI with resilient Yahoo fallbacks, generic TAAPI indicator proxy, and volume spike helpers.
 servers:
   - url: https://weekly-rotator-proxy.henryrajones.workers.dev
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
@@ -183,6 +183,78 @@ paths:
                     items:
                       $ref: '#/components/schemas/AtrResponse'
 
+  /taapi/indicator:
+    get:
+      operationId: getTaapiIndicator
+      summary: Generic TAAPI indicator proxy (multi-indicator, multi-symbol)
+      description: >
+        Fetch RSI, MACD, ADX, Supertrend, MFI, BBANDS/BBW/Keltner and more via a single route.
+        - Auto-sets `type=stocks` for equities; for crypto, pass an `exchange` (defaults to binance).
+        - Use `symbol` or `symbols` (comma-separated, max 3).
+        - Pass TAAPI params like `period`, `results`, `backtrack`, `addResultTimestamp` as needed.
+        - Returns TAAPI's raw structure with an added top-level `symbol` per item.
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [rsi, macd, adx, supertrend, mfi, bbands, bbw, keltner]
+        - name: symbol
+          in: query
+          required: false
+          schema: { type: string }
+          description: Single symbol (e.g., AAPL or BTC/USDT). Use this OR `symbols`.
+        - name: symbols
+          in: query
+          required: false
+          schema: { type: string }
+          description: Comma-separated symbols (max 3), e.g., "AAPL,MSFT,NVDA". Use this OR `symbol`.
+        - name: interval
+          in: query
+          required: false
+          schema: { type: string, default: 1d }
+        - name: period
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: type
+          in: query
+          required: false
+          schema: { type: string, enum: [stocks, crypto] }
+          description: Force asset type. Usually not required—stocks are auto-detected, crypto uses `/` in symbol.
+        - name: exchange
+          in: query
+          required: false
+          schema: { type: string }
+          description: Only for crypto. Defaults to binance.
+        - name: results
+          in: query
+          required: false
+          schema: { type: integer }
+          description: Number of results TAAPI should return (array output).
+        - name: backtrack
+          in: query
+          required: false
+          schema: { type: integer }
+          description: Backtrack candles (TAAPI feature).
+        - name: addResultTimestamp
+          in: query
+          required: false
+          schema: { type: string, enum: ['true','false'] }
+          description: Return timestamps for each result (TAAPI feature).
+      responses:
+        '200':
+          description: Indicator response for one symbol (object/array) or multiple (array of mixed objects/arrays)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IndicatorPassThrough'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/IndicatorPassThrough'
+
   /atr:
     get:
       operationId: getAtrFromYahoo
@@ -341,6 +413,18 @@ components:
         lastClose: { type: number }
         atrPct: { type: number }
         symbol: { type: string, description: Present when using multi-symbol calls }
+
+    # Pass-through schema: TAAPI may return an object or an array of objects.
+    IndicatorPassThrough:
+      oneOf:
+        - type: object
+          additionalProperties: true
+          properties:
+            symbol: { type: string }
+        - type: array
+          items:
+            type: object
+            additionalProperties: true
 
     VolumeResponse:
       type: object
