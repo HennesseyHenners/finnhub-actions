@@ -4,7 +4,7 @@ info:
   description: Combined endpoints for confirmCandidates and finalCheck. Uses only free-tier endpoints.
   version: 2.1.0
 servers:
-  - url: https://finnhub.io/api/v1?token=d2lr1k9r01qgtft5tkc0d2lr1k9r01qgtft5tkcg
+  - url: https://finnhub.io/api/v1?token=d2lr9mpr01qgtft5uqc0d2lr9mpr01qgtft5uqcg
     description: Finnhub Main API
 paths:
   /stock/candle:
