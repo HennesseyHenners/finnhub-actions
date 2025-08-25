@@ -183,7 +183,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/AtrResponse'
 
-  /taapi/indicator:
+/taapi/indicator:
     get:
       operationId: getTaapiIndicator
       summary: Generic TAAPI indicator proxy (multi-indicator, multi-symbol)
@@ -255,10 +255,14 @@ paths:
                     items:
                       $ref: '#/components/schemas/IndicatorPassThrough'
 
-  /atr:
+   /taapi/atr:
     get:
-      operationId: getAtrFromYahoo
-      summary: ATR computed from Yahoo Finance candles (direct fallback)
+      operationId: getAtrTaapi
+      summary: ATR via TAAPI (proxied; auto-fallback to Yahoo on error).
+      description: >
+        ATR via TAAPI with Yahoo fallback. Supports stocks (auto type=stocks)
+        and crypto (exchange, default binance). Use symbol or symbols (CSV,
+        max 3). Returns an object for one symbol or an array for many.
       parameters:
         - name: symbol
           in: query
