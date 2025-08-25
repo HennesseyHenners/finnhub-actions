@@ -1,10 +1,11 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Weekly Rotator Finnhub Proxy
-  version: 1.2.1
+  version: 1.2.2
   description: Proxy that injects the Finnhub token server-side and provides ATR via TAAPI with Yahoo fallback.
 servers:
   - url: https://weekly-rotator-proxy.henryrajones.workers.dev
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 
 paths:
   /quote:
@@ -46,14 +47,12 @@ paths:
           required: true
           schema:
             type: integer
-            format: int64
             description: Unix timestamp (UTC seconds)
         - name: to
           in: query
           required: true
           schema:
             type: integer
-            format: int64
             description: Unix timestamp (UTC seconds)
       responses:
         '200':
@@ -176,7 +175,6 @@ paths:
           required: false
           schema:
             type: integer
-            format: int32
             default: 14
       responses:
         '200':
@@ -201,7 +199,6 @@ paths:
           required: false
           schema:
             type: integer
-            format: int32
             default: 14
       responses:
         '200':
@@ -222,37 +219,23 @@ components:
         l: { type: number, description: Low }
         o: { type: number, description: Open }
         v: { type: number, description: Volume }
-        t: { type: integer, format: int64, description: Timestamp (seconds) }
+        t: { type: integer, description: Timestamp (seconds) }
 
     Candles:
       type: object
       properties:
-        c:
-          type: array
-          items: { type: number }
-        h:
-          type: array
-          items: { type: number }
-        l:
-          type: array
-          items: { type: number }
-        o:
-          type: array
-          items: { type: number }
-        v:
-          type: array
-          items: { type: number }
-        t:
-          type: array
-          items: { type: integer, format: int64 }
-        s:
-          type: string
-          description: Status
+        c: { type: array, items: { type: number } }
+        h: { type: array, items: { type: number } }
+        l: { type: array, items: { type: number } }
+        o: { type: array, items: { type: number } }
+        v: { type: array, items: { type: number } }
+        t: { type: array, items: { type: integer } }
+        s: { type: string, description: Status }
 
     NewsItem:
       type: object
       properties:
-        datetime: { type: integer, format: int64 }
+        datetime: { type: integer }
         headline: { type: string }
         summary: { type: string }
         source: { type: string }
@@ -287,6 +270,6 @@ components:
       properties:
         value: { type: number }
         source: { type: string }
-        period: { type: integer, format: int32 }
+        period: { type: integer }
         lastClose: { type: number }
         atrPct: { type: number }
