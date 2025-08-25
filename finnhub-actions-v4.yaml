@@ -21,7 +21,7 @@ paths:
           description: "Finnhub API key – do not change"
           schema:
             type: string
-            default: YOUR_WORKING_KEY_HERE
+            default: d2lr9mpr01qgtft5uqc0d2lr9mpr01qgtft5uqcg
       responses:
         '200':
           description: Quote data
