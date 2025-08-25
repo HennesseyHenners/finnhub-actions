@@ -1,8 +1,7 @@
 openapi: 3.1.0
 info:
-  title: Finnhub GPT Actions (forced token param)
-  version: 4.0.0
-  description: Minimal spec that forces the Finnhub API key to be sent as a required query parameter so the builder cannot drop it.
+  title: Finnhub GPT Actions
+  version: 5.0.0
 servers:
   - url: https://finnhub.io/api/v1
 paths:
@@ -15,13 +14,6 @@ paths:
           in: query
           required: true
           schema: { type: string }
-        - name: token
-          in: query
-          required: true
-          description: "Finnhub API key – do not change"
-          schema:
-            type: string
-            default: d2lr9mpr01qgtft5uqc0d2lr9mpr01qgtft5uqcg
       responses:
         '200':
           description: Quote data
@@ -30,13 +22,13 @@ paths:
               schema:
                 type: object
                 properties:
-                  c: { type: number, description: Current price }
-                  pc: { type: number, description: Previous close }
+                  c: { type: number }
+                  pc: { type: number }
                   h: { type: number }
                   l: { type: number }
                   o: { type: number }
-                  v: { type: number, description: Volume }
-                  t: { type: integer, description: Unix timestamp }
+                  v: { type: number }
+                  t: { type: integer }
   /stock/candle:
     get:
       operationId: getCandles
@@ -55,18 +47,11 @@ paths:
         - name: from
           in: query
           required: true
-          schema: { type: integer, description: Unix timestamp (UTC) }
+          schema: { type: integer }
         - name: to
           in: query
           required: true
-          schema: { type: integer, description: Unix timestamp (UTC) }
-        - name: token
-          in: query
-          required: true
-          description: "Finnhub API key – do not change"
-          schema:
-            type: string
-            default: d2lr9mpr01qgtft5uqc0d2lr9mpr01qgtft5uqcg
+          schema: { type: integer }
       responses:
         '200':
           description: Daily candles
@@ -75,7 +60,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  c: { type: array, items: { type: number } }   # close
+                  c: { type: array, items: { type: number } }
                   h: { type: array, items: { type: number } }
                   l: { type: array, items: { type: number } }
                   o: { type: array, items: { type: number } }
