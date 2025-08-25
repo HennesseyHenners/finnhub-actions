@@ -1,0 +1,71 @@
+openapi: 3.1.0
+info:
+  title: Finnhub GPT Actions
+  version: 3.0.0
+  description: Minimal spec for Finnhub with key embedded in the server URL to avoid UI auth issues.
+servers:
+  - url: https://finnhub.io/api/v1?token=d2lr9mpr01qgtft5uqc0d2lr9mpr01qgtft5uqcg
+paths:
+  /quote:
+    get:
+      operationId: getQuote
+      summary: Get real-time quote
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quote data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  c: { type: number, description: Current price }
+                  pc: { type: number, description: Previous close }
+                  h: { type: number }
+                  l: { type: number }
+                  o: { type: number }
+                  v: { type: number, description: Volume }
+                  t: { type: integer, description: Unix timestamp }
+  /stock/candle:
+    get:
+      operationId: getCandles
+      summary: Historical daily OHLCV
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: resolution
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [D]
+        - name: from
+          in: query
+          required: true
+          schema: { type: integer, description: Unix timestamp (UTC) }
+        - name: to
+          in: query
+          required: true
+          schema: { type: integer, description: Unix timestamp (UTC) }
+      responses:
+        '200':
+          description: Daily candles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  c: { type: array, items: { type: number } }   # close
+                  h: { type: array, items: { type: number } }
+                  l: { type: array, items: { type: number } }
+                  o: { type: array, items: { type: number } }
+                  v: { type: array, items: { type: number } }
+                  t: { type: array, items: { type: integer } }
+                  s: { type: string }
