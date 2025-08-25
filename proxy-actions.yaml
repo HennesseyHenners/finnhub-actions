@@ -1,0 +1,160 @@
+openapi: 3.1.0
+info:
+  title: Weekly Rotator Finnhub Proxy
+  version: 1.0.0
+  description: Proxy that injects the Finnhub token server-side to avoid connector auth/sandbox issues.
+servers:
+  - url: https://weekly-rotator-proxy.YOURSUBDOMAIN.workers.dev
+paths:
+  /quote:
+    get:
+      operationId: getQuote
+      summary: Get real-time quote (proxied)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Quote data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  c: { type: number }
+                  pc: { type: number }
+                  h: { type: number }
+                  l: { type: number }
+                  o: { type: number }
+                  v: { type: number }
+                  t: { type: integer }
+  /stock/candle:
+    get:
+      operationId: getCandles
+      summary: Historical daily OHLCV (proxied)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: resolution
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [D]
+        - name: from
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: to
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Candles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  c: { type: array, items: { type: number } }
+                  h: { type: array, items: { type: number } }
+                  l: { type: array, items: { type: number } }
+                  o: { type: array, items: { type: number } }
+                  v: { type: array, items: { type: number } }
+                  t: { type: array, items: { type: integer } }
+                  s: { type: string }
+  /company-news:
+    get:
+      operationId: getRecentNews
+      summary: Company news last 24–48h (proxied)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: News list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    datetime: { type: integer }
+                    headline: { type: string }
+                    summary: { type: string }
+                    source: { type: string }
+                    url: { type: string }
+  /calendar/earnings:
+    get:
+      operationId: getEarningsCalendar
+      summary: Earnings calendar (proxied)
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: symbol
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Earnings list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  earningsCalendar:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        symbol: { type: string }
+                        date: { type: string, format: date }
+                        hour: { type: string }
+                        epsEstimate: { type: number }
+                        revenueEstimate: { type: number }
+  /stock/metric:
+    get:
+      operationId: getStockMetrics
+      summary: Fundamentals (proxied)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: metric
+          in: query
+          required: false
+          schema: { type: string, default: all }
+      responses:
+        '200':
+          description: Metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metric:
+                    type: object
