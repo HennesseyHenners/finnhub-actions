@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Weekly Rotator Finnhub Proxy
-  version: 1.8.0
+  version: 1.9.0
   description: Proxy injecting Finnhub & TAAPI secrets; ATR via TAAPI with Yahoo fallbacks, generic TAAPI indicator, evaluators, and volume spike helpers.
 servers:
   - url: https://weekly-rotator-proxy.henryrajones.workers.dev
@@ -177,7 +177,7 @@ paths:
       summary: Generic TAAPI indicator proxy (multi-indicator, multi-symbol)
       description: >
         Proxy for RSI, MACD, ADX, Supertrend, MFI, BBANDS/BBW/Keltner. Auto type=stocks; crypto needs exchange (default binance).
-        Use symbol or symbols (max 3). Supports period/results/backtrack/addResultTimestamp. Returns TAAPI JSON + top-level symbol.
+        Use symbol or symbols (max 3). Supports period/results/backtrack/addResultTimestamp. forceRefresh bypasses cache.
       parameters:
         - name: name
           in: query
@@ -220,6 +220,10 @@ paths:
           in: query
           required: false
           schema: { type: string, enum: ['true','false'] }
+        - name: forceRefresh
+          in: query
+          required: false
+          schema: { type: string, enum: ['true','false'], default: 'false' }
       responses:
         '200':
           description: Indicator response (object/array) or array per symbol
@@ -236,7 +240,7 @@ paths:
       operationId: evaluateSwing
       summary: Stage-2/3 trend evaluator (RSI, MACD, ADX, Supertrend)
       description: >
-        Returns trendAligned, overheatFlag, qualityOk with raw indicator values and rationale. Stage=3 adds intraday RSI/MACD checks.
+        Returns trendAligned, overheatFlag, qualityOk with raw indicator values and rationale. Stage=3 adds intraday RSI/MACD checks. forceRefresh bypasses cache.
       parameters:
         - name: symbol
           in: query
@@ -296,6 +300,10 @@ paths:
           in: query
           required: false
           schema: { type: string }
+        - name: forceRefresh
+          in: query
+          required: false
+          schema: { type: string, enum: ['true','false'], default: 'false' }
       responses:
         '200':
           description: Evaluation per symbol
