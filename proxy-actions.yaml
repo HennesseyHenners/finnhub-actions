@@ -1,15 +1,242 @@
-# … (everything above stays the same)
+openapi: 3.1.0
+info:
+  title: Weekly Rotator Finnhub Proxy
+  version: 1.8.0
+  description: Proxy injecting Finnhub & TAAPI secrets; ATR via TAAPI with Yahoo fallbacks, generic TAAPI indicator, evaluators, and volume spike helpers.
+servers:
+  - url: https://weekly-rotator-proxy.henryrajones.workers.dev
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 
 paths:
-  # … existing paths …
+  /quote:
+    get:
+      operationId: getQuote
+      summary: Get real-time quote (proxied)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Quote data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+
+  /stock/candle:
+    get:
+      operationId: getCandles
+      summary: Historical daily OHLCV (proxied)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: resolution
+          in: query
+          required: true
+          schema: { type: string, enum: [D] }
+        - name: from
+          in: query
+          required: true
+          schema: { type: integer, description: Unix timestamp (UTC seconds) }
+        - name: to
+          in: query
+          required: true
+          schema: { type: integer, description: Unix timestamp (UTC seconds) }
+      responses:
+        '200':
+          description: Candles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Candles'
+
+  /company-news:
+    get:
+      operationId: getRecentNews
+      summary: Company news last 24-48h (proxied)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: News list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/NewsItem' }
+
+  /calendar/earnings:
+    get:
+      operationId: getEarningsCalendar
+      summary: Earnings calendar (proxied)
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: symbol
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Earnings list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EarningsResponse'
+
+  /stock/metric:
+    get:
+      operationId: getStockMetrics
+      summary: Fundamentals (proxied)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: metric
+          in: query
+          required: false
+          schema: { type: string, default: all }
+      responses:
+        '200':
+          description: Metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+
+  /taapi/atr:
+    get:
+      operationId: getAtrTaapi
+      summary: ATR via TAAPI (proxied; Yahoo fallback)
+      description: >
+        ATR via TAAPI with Yahoo fallback. Stocks auto type=stocks; crypto requires exchange (default binance).
+        Use symbol or symbols (CSV, max 3). Returns object for one or array for many.
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema: { type: string }
+          description: Single symbol (e.g., AAPL). Use this OR `symbols`.
+        - name: symbols
+          in: query
+          required: false
+          schema: { type: string }
+          description: Comma-separated (max 3).
+        - name: interval
+          in: query
+          required: false
+          schema: { type: string, default: 1d }
+        - name: period
+          in: query
+          required: false
+          schema: { type: integer, default: 14 }
+        - name: type
+          in: query
+          required: false
+          schema: { type: string, enum: [stocks, crypto] }
+        - name: exchange
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: ATR response (single or batch)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AtrResponse'
+                  - type: array
+                    items: { $ref: '#/components/schemas/AtrResponse' }
+
+  /taapi/indicator:
+    get:
+      operationId: getTaapiIndicator
+      summary: Generic TAAPI indicator proxy (multi-indicator, multi-symbol)
+      description: >
+        Proxy for RSI, MACD, ADX, Supertrend, MFI, BBANDS/BBW/Keltner. Auto type=stocks; crypto needs exchange (default binance).
+        Use symbol or symbols (max 3). Supports period/results/backtrack/addResultTimestamp. Returns TAAPI JSON + top-level symbol.
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema: { type: string, enum: [rsi, macd, adx, supertrend, mfi, bbands, bbw, keltner] }
+        - name: symbol
+          in: query
+          required: false
+          schema: { type: string }
+        - name: symbols
+          in: query
+          required: false
+          schema: { type: string }
+          description: CSV (max 3).
+        - name: interval
+          in: query
+          required: false
+          schema: { type: string, default: 1d }
+        - name: period
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: type
+          in: query
+          required: false
+          schema: { type: string, enum: [stocks, crypto] }
+        - name: exchange
+          in: query
+          required: false
+          schema: { type: string }
+        - name: results
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: backtrack
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: addResultTimestamp
+          in: query
+          required: false
+          schema: { type: string, enum: ['true','false'] }
+      responses:
+        '200':
+          description: Indicator response (object/array) or array per symbol
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IndicatorPassThrough'
+                  - type: array
+                    items: { $ref: '#/components/schemas/IndicatorPassThrough' }
 
   /evaluate/swing:
     get:
       operationId: evaluateSwing
       summary: Stage-2/3 trend evaluator (RSI, MACD, ADX, Supertrend)
       description: >
-        Returns trendAligned, overheatFlag, qualityOk with raw indicator values and rationale.
-        Fetches RSI, MACD, ADX, Supertrend (and optional MFI). Stage=3 adds intraday RSI/MACD.
+        Returns trendAligned, overheatFlag, qualityOk with raw indicator values and rationale. Stage=3 adds intraday RSI/MACD checks.
       parameters:
         - name: symbol
           in: query
@@ -20,7 +247,7 @@ paths:
           in: query
           required: false
           schema: { type: string }
-          description: CSV of symbols (max 3).
+          description: CSV (max 3).
         - name: stage
           in: query
           required: false
@@ -33,7 +260,6 @@ paths:
           in: query
           required: false
           schema: { type: string, default: 1h }
-          description: Used only when stage=3.
         - name: adxMin
           in: query
           required: false
@@ -66,12 +292,10 @@ paths:
           in: query
           required: false
           schema: { type: string, enum: [stocks, crypto] }
-          description: Force asset type. Usually not required.
         - name: exchange
           in: query
           required: false
           schema: { type: string }
-          description: Crypto exchange (default binance).
       responses:
         '200':
           description: Evaluation per symbol
@@ -79,12 +303,233 @@ paths:
             application/json:
               schema:
                 type: array
-                items:
-                  $ref: '#/components/schemas/SwingEvalResponse'
+                items: { $ref: '#/components/schemas/SwingEvalResponse' }
+
+  /evaluate/tradecard:
+    get:
+      operationId: evaluateTradecard
+      summary: Trade card math (entry/stop/target/RR/size)
+      description: >
+        Builds a trade card from entry+ATR (or fetches quote/ATR if not provided). Returns entry, stop, target, rr, size, flags, and inputs.
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema: { type: string }
+          description: Needed if entry or atr not provided.
+        - name: entry
+          in: query
+          required: false
+          schema: { type: number }
+          description: Overrides quote.c if provided.
+        - name: atr
+          in: query
+          required: false
+          schema: { type: number }
+          description: Overrides indicator if provided.
+        - name: accountRisk
+          in: query
+          required: true
+          schema: { type: number }
+          description: Risk per trade in currency units.
+        - name: rrMultiple
+          in: query
+          required: false
+          schema: { type: number, default: 2 }
+        - name: atrPeriod
+          in: query
+          required: false
+          schema: { type: integer, default: 14 }
+        - name: interval
+          in: query
+          required: false
+          schema: { type: string, default: 1d }
+        - name: type
+          in: query
+          required: false
+          schema: { type: string, enum: [stocks, crypto] }
+        - name: exchange
+          in: query
+          required: false
+          schema: { type: string }
+        - name: minSize
+          in: query
+          required: false
+          schema: { type: integer, default: 1 }
+      responses:
+        '200':
+          description: Trade card result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradeCardResponse'
+
+  /atr:
+    get:
+      operationId: getAtrFromYahoo
+      summary: ATR computed from Yahoo Finance candles (direct fallback)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: period
+          in: query
+          required: false
+          schema: { type: integer, default: 14 }
+      responses:
+        '200':
+          description: ATR response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AtrResponse'
+
+  /yahoo/volume:
+    get:
+      operationId: getYahooVolume
+      summary: Latest daily volume from Yahoo Finance (fallback when quote.v is missing)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Latest volume snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeResponse'
+
+  /volume/spike:
+    get:
+      operationId: getVolumeSpike
+      summary: Compute live volume spike vs. AvgVol(3m)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: avgVol3m
+          in: query
+          required: true
+          schema: { type: number }
+          description: 3-month average volume from Stage-1 screener.
+        - name: prefer
+          in: query
+          required: false
+          schema: { type: string, enum: [auto, finnhub, yahoo], default: auto }
+      responses:
+        '200':
+          description: Live volume spike calculation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeSpikeResponse'
+
+  /volume/spike/normalized:
+    get:
+      operationId: getVolumeSpikeNormalized
+      summary: Time-normalized live volume spike (US session 09:30–16:00 NY)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: avgVol3m
+          in: query
+          required: true
+          schema: { type: number }
+        - name: prefer
+          in: query
+          required: false
+          schema: { type: string, enum: [auto, finnhub, yahoo], default: auto }
+      responses:
+        '200':
+          description: Time-normalized volume spike calculation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NormalizedVolumeSpikeResponse'
 
 components:
   schemas:
-    # … existing schemas …
+    Quote:
+      type: object
+      properties:
+        c: { type: number, description: Current price }
+        pc: { type: number, description: Previous close }
+        h: { type: number, description: High }
+        l: { type: number, description: Low }
+        o: { type: number, description: Open }
+        v: { type: number, description: Volume (may be omitted on free plans) }
+        t: { type: integer, description: Timestamp (seconds) }
+
+    Candles:
+      type: object
+      properties:
+        c: { type: array, items: { type: number } }
+        h: { type: array, items: { type: number } }
+        l: { type: array, items: { type: number } }
+        o: { type: array, items: { type: number } }
+        v: { type: array, items: { type: number } }
+        t: { type: array, items: { type: integer } }
+        s: { type: string, description: Status }
+
+    NewsItem:
+      type: object
+      properties:
+        datetime: { type: integer }
+        headline: { type: string }
+        summary: { type: string }
+        source: { type: string }
+        url: { type: string }
+
+    EarningsResponse:
+      type: object
+      properties:
+        earningsCalendar:
+          type: array
+          items: { $ref: '#/components/schemas/EarningsItem' }
+
+    EarningsItem:
+      type: object
+      properties:
+        symbol: { type: string }
+        date: { type: string, format: date }
+        hour: { type: string }
+        epsEstimate: { type: number }
+        revenueEstimate: { type: number }
+
+    MetricsResponse:
+      type: object
+      properties:
+        metric:
+          type: object
+          additionalProperties: true
+
+    AtrResponse:
+      type: object
+      properties:
+        value: { type: number }
+        source: { type: string }
+        period: { type: integer }
+        lastClose: { type: number }
+        atrPct: { type: number }
+        symbol: { type: string, description: Present when using multi-symbol calls }
+
+    # Pass-through schema for TAAPI indicators
+    IndicatorPassThrough:
+      oneOf:
+        - type: object
+          additionalProperties: true
+          properties:
+            symbol: { type: string }
+        - type: array
+          items:
+            type: object
+            additionalProperties: true
 
     SwingEvalResponse:
       type: object
@@ -124,3 +569,62 @@ components:
         rationale:
           type: array
           items: { type: string }
+
+    TradeCardResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        error: { type: string, nullable: true }
+        detail: { type: string, nullable: true }
+        ticker: { type: string, nullable: true }
+        entry: { type: number }
+        stop: { type: number }
+        target: { type: number }
+        atr: { type: number }
+        rr: { type: number }
+        size: { type: integer }
+        flags:
+          type: object
+          properties:
+            rrOk: { type: boolean }
+            sizeOk: { type: boolean }
+        inputs:
+          type: object
+          properties:
+            accountRisk: { type: number }
+            rrMultiple: { type: number }
+            atrPeriod: { type: integer }
+            interval: { type: string }
+            atrSource: { type: string }
+            priceSource: { type: string }
+            gapPct: { type: number, nullable: true }
+
+    VolumeResponse:
+      type: object
+      properties:
+        volume: { type: number }
+        lastClose: { type: number }
+        source: { type: string }
+
+    VolumeSpikeResponse:
+      type: object
+      properties:
+        symbol: { type: string }
+        liveVolume: { type: number }
+        avgVol3m: { type: number }
+        spike: { type: number, description: liveVolume / avgVol3m }
+        source: { type: string, description: "finnhub or yahoo" }
+
+    NormalizedVolumeSpikeResponse:
+      type: object
+      properties:
+        symbol: { type: string }
+        liveVolume: { type: number }
+        avgVol3m: { type: number }
+        rawSpike: { type: number, description: liveVolume / avgVol3m }
+        adjustedSpike: { type: number, nullable: true, description: "Time-normalized; null in pre-market" }
+        expectedSoFar: { type: number, description: "AvgVol3m * fractionElapsed (when open)" }
+        minutesSinceOpen: { type: integer }
+        fractionElapsed: { type: number }
+        marketState: { type: string, enum: [pre, open, post, closed] }
+        source: { type: string, description: "finnhub or yahoo" }
