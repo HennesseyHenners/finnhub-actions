@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Weekly Rotator Finnhub Proxy
-  version: 1.1.0
-  description: Proxy that injects the Finnhub token server-side to avoid connector auth/sandbox issues. Includes TAAPI ATR fallback.
+  version: 1.2.0
+  description: Proxy that injects the Finnhub token server-side and provides ATR via TAAPI with Yahoo fallback.
 servers:
   - url: https://weekly-rotator-proxy.YOURSUBDOMAIN.workers.dev
 paths:
@@ -166,7 +166,7 @@ paths:
   /taapi/atr:
     get:
       operationId: getAtrTaapi
-      summary: ATR via TAAPI (proxied; free-tier friendly)
+      summary: ATR via TAAPI (proxied; will auto-fallback to Yahoo on 429)
       parameters:
         - name: symbol
           in: query
@@ -192,6 +192,35 @@ paths:
               schema:
                 type: object
                 properties:
-                  value:
-                    type: number
-                    description: Latest ATR value
+                  value: { type: number }
+                  source: { type: string }
+                  period: { type: integer }
+                  lastClose: { type: number }
+                  atrPct: { type: number }
+
+  /atr:
+    get:
+      operationId: getAtrFromYahoo
+      summary: ATR computed from Yahoo Finance candles (direct fallback)
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema: { type: string }
+        - name: period
+          in: query
+          required: false
+          schema: { type: integer, default: 14 }
+      responses:
+        '200':
+          description: ATR response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value: { type: number }
+                  source: { type: string }
+                  period: { type: integer }
+                  lastClose: { type: number }
+                  atrPct: { type: number }
