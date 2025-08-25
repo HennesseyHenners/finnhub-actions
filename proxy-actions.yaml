@@ -136,13 +136,18 @@ paths:
   /taapi/atr:
     get:
       operationId: getAtrTaapi
-      summary: ATR via TAAPI (proxied; auto-fallback to Yahoo on error). Supports up to 3 symbols via `symbols`.
+      summary: ATR via TAAPI (proxied; auto-fallback to Yahoo on error).
+      description: >
+        Supports both stocks and crypto. Use `symbol` for a single instrument,
+        or `symbols` (comma-separated, max 3) for batch. For stocks, the proxy
+        sets `type=stocks` automatically. For crypto, specify `exchange`
+        (defaults to binance). Returns either a single object or an array.
       parameters:
         - name: symbol
           in: query
           required: false
           schema: { type: string }
-          description: Single symbol (e.g., AAPL). Use this OR `symbols`.
+          description: Single symbol (e.g., AAPL or BTC/USDT). Use this OR `symbols`.
         - name: symbols
           in: query
           required: false
@@ -152,14 +157,20 @@ paths:
           in: query
           required: false
           schema: { type: string, default: 1d }
-        - name: exchange
-          in: query
-          required: false
-          schema: { type: string, default: yahoo }
         - name: period
           in: query
           required: false
           schema: { type: integer, default: 14 }
+        - name: type
+          in: query
+          required: false
+          schema: { type: string, enum: [stocks, crypto] }
+          description: Force asset type. Usually not required—stocks are auto-detected, crypto uses `/` in symbol.
+        - name: exchange
+          in: query
+          required: false
+          schema: { type: string }
+          description: Only for crypto. Defaults to binance.
       responses:
         '200':
           description: ATR response for one symbol (object) or multiple (array of objects)
@@ -172,39 +183,18 @@ paths:
                     items:
                       $ref: '#/components/schemas/AtrResponse'
 
-  /atr:
-    get:
-      operationId: getAtrFromYahoo
-      summary: ATR computed from Yahoo Finance candles (direct fallback)
-      parameters:
-        - name: symbol
-          in: query
-          required: true
-          schema: { type: string }
-        - name: period
-          in: query
-          required: false
-          schema: { type: integer, default: 14 }
-      responses:
-        '200':
-          description: ATR response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AtrResponse'
-
 components:
   schemas:
-    Quote:
+    AtrResponse:
       type: object
       properties:
-        c: { type: number, description: Current price }
-        pc: { type: number, description: Previous close }
-        h: { type: number, description: High }
-        l: { type: number, description: Low }
-        o: { type: number, description: Open }
-        v: { type: number, description: Volume }
-        t: { type: integer, description: Timestamp (seconds) }
+        value: { type: number }
+        source: { type: string }
+        period: { type: integer }
+        lastClose: { type: number }
+        atrPct: { type: number }
+        symbol: { type: string, description: Present when using multi-symbol calls }
+
 
     Candles:
       type: object
